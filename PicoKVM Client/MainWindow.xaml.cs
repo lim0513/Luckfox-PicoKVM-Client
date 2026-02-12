@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
@@ -24,8 +25,15 @@ namespace PicoKVM_Client
         private bool _isInputCaptured = false;
 
         // 连接状态
+        private readonly AppSettings _settings = AppSettings.Load();
         private string _kvmUrl = string.Empty;
         private bool _isConnected = false;
+
+        // 全屏状态
+        private bool _isFullscreen = false;
+        private WindowState _previousWindowState;
+        private WindowStyle _previousWindowStyle;
+        private ResizeMode _previousResizeMode;
 
         // 被钩子拦截的修饰键状态（GetAsyncKeyState对被拦截的键不可靠）
         private bool _winKeyDown = false;
@@ -52,6 +60,7 @@ namespace PicoKVM_Client
         {
             InitializeComponent();
             _proc = HookCallback;
+            txtKvmUrl.Text = _settings.KvmUrl;
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -72,6 +81,8 @@ namespace PicoKVM_Client
 
         private void Window_Closed(object sender, EventArgs e)
         {
+            _settings.KvmUrl = txtKvmUrl.Text.Trim();
+            _settings.Save();
             DisconnectFromKvm();
             UninstallKeyboardHook();
         }
@@ -96,6 +107,9 @@ namespace PicoKVM_Client
                 MessageBox.Show("请输入KVM地址", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+
+            _settings.KvmUrl = _kvmUrl;
+            _settings.Save();
 
             try
             {
@@ -143,6 +157,48 @@ namespace PicoKVM_Client
             txtStatus.Text = "未连接";
             txtStatus.Visibility = Visibility.Visible;
             txtStatusBar.Text = "已断开连接";
+        }
+
+        #endregion
+
+        #region 全屏管理
+
+        private void ChkFullscreen_Changed(object sender, RoutedEventArgs e)
+        {
+            if (chkFullscreen.IsChecked == true)
+                EnterFullscreen();
+            else
+                ExitFullscreen();
+        }
+
+        private void EnterFullscreen()
+        {
+            _previousWindowState = WindowState;
+            _previousWindowStyle = WindowStyle;
+            _previousResizeMode = ResizeMode;
+
+            WindowStyle = WindowStyle.None;
+            ResizeMode = ResizeMode.NoResize;
+            WindowState = WindowState.Maximized;
+
+            videoBorder.Margin = new Thickness(0);
+            statusBar.Visibility = Visibility.Collapsed;
+            toolBarPlaceholder.Visibility = Visibility.Collapsed;
+
+            _isFullscreen = true;
+        }
+
+        private void ExitFullscreen()
+        {
+            WindowStyle = _previousWindowStyle;
+            ResizeMode = _previousResizeMode;
+            WindowState = _previousWindowState;
+
+            videoBorder.Margin = new Thickness(5);
+            statusBar.Visibility = Visibility.Visible;
+            toolBarPlaceholder.Visibility = Visibility.Visible;
+
+            _isFullscreen = false;
         }
 
         #endregion
@@ -282,9 +338,11 @@ namespace PicoKVM_Client
 
         private void ToggleInputCapture()
         {
+            bool wantCapture = chkCaptureInput.IsChecked == true;
+
             if (!_isConnected)
             {
-                if (chkCaptureInput.IsChecked == true)
+                if (wantCapture)
                 {
                     chkCaptureInput.IsChecked = false;
                     MessageBox.Show("请先连接到KVM设备", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -292,7 +350,7 @@ namespace PicoKVM_Client
                 return;
             }
 
-            _isInputCaptured = chkCaptureInput.IsChecked == true;
+            _isInputCaptured = wantCapture;
 
             if (_isInputCaptured)
             {
@@ -340,7 +398,10 @@ namespace PicoKVM_Client
                 // F11 始终用于切换捕获模式，不转发
                 if (vkCode == 0x7A && isKeyDown) // F11 = 0x7A
                 {
-                    Dispatcher.Invoke(() => chkCaptureInput.IsChecked = false);
+                    Dispatcher.Invoke(() =>
+                    {
+                        chkCaptureInput.IsChecked = false;
+                    });
                     return (IntPtr)1;
                 }
 
@@ -392,7 +453,12 @@ namespace PicoKVM_Client
         {
             if (e.Key == Key.F11)
             {
-                chkCaptureInput.IsChecked = !chkCaptureInput.IsChecked;
+                chkCaptureInput.IsChecked = chkCaptureInput.IsChecked != true;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.F12)
+            {
+                chkFullscreen.IsChecked = chkFullscreen.IsChecked != true;
                 e.Handled = true;
             }
         }
