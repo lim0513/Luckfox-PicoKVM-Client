@@ -8,7 +8,8 @@
     mc:Ignorable="d"
     Title="PicoKVM Client" Height="600" Width="1024"
     KeyDown="Window_KeyDown"
-    KeyUp="Window_KeyUp"
+    Activated="Window_Activated"
+    Deactivated="Window_Deactivated"
     Loaded="Window_Loaded"
     Closed="Window_Closed"
     Background="#FF1E1E1E">
@@ -30,8 +31,6 @@
             <TextBox x:Name="txtKvmUrl" Width="250" VerticalAlignment="Center"/>
             <Button x:Name="btnConnect" Content="连接" Width="80" Margin="10,0,0,0" Click="BtnConnect_Click"/>
             <Button x:Name="btnDisconnect" Content="断开" Width="80" Margin="10,0,0,0" Click="BtnDisconnect_Click" IsEnabled="False"/>
-            <CheckBox x:Name="chkCaptureInput" Content="捕获输入 (F11)" VerticalAlignment="Center" Margin="20,0,0,0" 
-                      Foreground="White" Checked="ChkCaptureInput_Changed" Unchecked="ChkCaptureInput_Changed"/>
             <CheckBox x:Name="chkFullscreen" Content="全屏 (F12)" VerticalAlignment="Center" Margin="20,0,0,0" 
                       Foreground="White" Checked="ChkFullscreen_Changed" Unchecked="ChkFullscreen_Changed"/>
         </StackPanel>

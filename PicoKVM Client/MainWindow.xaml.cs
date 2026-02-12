@@ -71,7 +71,7 @@ namespace PicoKVM_Client
             {
                 // 预初始化WebView2，避免连接时等待
                 await webView.EnsureCoreWebView2Async();
-                txtStatusBar.Text = "就绪 - 输入KVM地址并点击连接，按F11切换输入捕获";
+                txtStatusBar.Text = "就绪 - 输入KVM地址并点击连接";
             }
             catch (Exception ex)
             {
@@ -131,7 +131,7 @@ namespace PicoKVM_Client
                 btnDisconnect.IsEnabled = true;
                 txtKvmUrl.IsEnabled = false;
                 txtStatus.Visibility = Visibility.Collapsed;
-                txtStatusBar.Text = $"已连接到 {_kvmUrl} - WebView2模式，按F11捕获输入";
+                txtStatusBar.Text = $"已连接到 {_kvmUrl} - 窗口激活时自动捕获输入";
             }
             catch (Exception ex)
             {
@@ -150,10 +150,13 @@ namespace PicoKVM_Client
             webView.Visibility = Visibility.Collapsed;
 
             _isConnected = false;
+            _isInputCaptured = false;
+            UninstallKeyboardHook();
+            _winKeyDown = false;
+            _altKeyDown = false;
             btnConnect.IsEnabled = true;
             btnDisconnect.IsEnabled = false;
             txtKvmUrl.IsEnabled = true;
-            chkCaptureInput.IsChecked = false;
             txtStatus.Text = "未连接";
             txtStatus.Visibility = Visibility.Visible;
             txtStatusBar.Text = "已断开连接";
@@ -331,39 +334,26 @@ namespace PicoKVM_Client
 
         #region 输入捕获
 
-        private void ChkCaptureInput_Changed(object sender, RoutedEventArgs e)
+        private void Window_Activated(object? sender, EventArgs e)
         {
-            ToggleInputCapture();
-        }
-
-        private void ToggleInputCapture()
-        {
-            bool wantCapture = chkCaptureInput.IsChecked == true;
-
-            if (!_isConnected)
+            if (_isConnected && !_isInputCaptured)
             {
-                if (wantCapture)
-                {
-                    chkCaptureInput.IsChecked = false;
-                    MessageBox.Show("请先连接到KVM设备", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                return;
-            }
-
-            _isInputCaptured = wantCapture;
-
-            if (_isInputCaptured)
-            {
+                _isInputCaptured = true;
                 InstallKeyboardHook();
                 webView.Focus();
-                txtStatusBar.Text = "✓ 输入已激活 - 所有输入发送到远程 (按F11退出)";
+                txtStatusBar.Text = $"✓ 输入已捕获 - 已连接到 {_kvmUrl}";
             }
-            else
+        }
+
+        private void Window_Deactivated(object? sender, EventArgs e)
+        {
+            if (_isInputCaptured)
             {
+                _isInputCaptured = false;
                 UninstallKeyboardHook();
                 _winKeyDown = false;
                 _altKeyDown = false;
-                txtStatusBar.Text = $"已连接到 {_kvmUrl} (按F11激活输入)";
+                txtStatusBar.Text = $"已连接到 {_kvmUrl}";
             }
         }
 
@@ -394,28 +384,14 @@ namespace PicoKVM_Client
             {
                 int vkCode = Marshal.ReadInt32(lParam);
                 bool isKeyDown = (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN);
-                
-                // F11 始终用于切换捕获模式，不转发
-                if (vkCode == 0x7A && isKeyDown) // F11 = 0x7A
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        chkCaptureInput.IsChecked = false;
-                    });
-                    return (IntPtr)1;
-                }
 
                 // 手动跟踪被拦截的修饰键状态
                 bool isWinKey = (vkCode == 0x5B || vkCode == 0x5C);
-                bool isAltKey = (vkCode is 0x12 or 0xA4 or 0xA5); // VK_MENU, VK_LMENU, VK_RMENU
+                bool isAltKey = (vkCode is 0x12 or 0xA4 or 0xA5);
 
                 if (isWinKey) _winKeyDown = isKeyDown;
                 if (isAltKey) _altKeyDown = isKeyDown;
 
-                // 需要拦截的情况（会被系统抢走的快捷键）：
-                // 1. Win键本身
-                // 2. Win按住时的任何键（Win+E, Win+D, Win+Tab, Win+方向键...）
-                // 3. Alt+Tab / Alt+Esc / Alt+F4（这些会被系统抢走）
                 bool shouldIntercept = false;
 
                 if (isWinKey)
@@ -428,7 +404,6 @@ namespace PicoKVM_Client
                 }
                 else if (_altKeyDown && (vkCode == 0x09 || vkCode == 0x1B || vkCode == 0x73))
                 {
-                    // Alt+Tab, Alt+Esc, Alt+F4
                     shouldIntercept = true;
                 }
 
@@ -442,7 +417,6 @@ namespace PicoKVM_Client
                     return (IntPtr)1;
                 }
 
-                // 其他按键不拦截，正常传递给WebView2（浏览器自己处理）
                 return CallNextHookEx(_hookID, nCode, wParam, lParam);
             }
 
@@ -451,20 +425,11 @@ namespace PicoKVM_Client
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.F11)
-            {
-                chkCaptureInput.IsChecked = chkCaptureInput.IsChecked != true;
-                e.Handled = true;
-            }
-            else if (e.Key == Key.F12)
+            if (e.Key == Key.F12)
             {
                 chkFullscreen.IsChecked = chkFullscreen.IsChecked != true;
                 e.Handled = true;
             }
-        }
-
-        private void Window_KeyUp(object sender, KeyEventArgs e)
-        {
         }
 
         #endregion
