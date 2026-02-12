@@ -89,14 +89,12 @@ namespace PicoKVM_Client
 
         #region 连接管理
 
-        private async void BtnConnect_Click(object sender, RoutedEventArgs e)
+        private async void TglConnect_Changed(object sender, RoutedEventArgs e)
         {
-            await ConnectToKvmAsync();
-        }
-
-        private void BtnDisconnect_Click(object sender, RoutedEventArgs e)
-        {
-            DisconnectFromKvm();
+            if (tglConnect.IsChecked == true)
+                await ConnectToKvmAsync();
+            else
+                DisconnectFromKvm();
         }
 
         private async Task ConnectToKvmAsync()
@@ -104,6 +102,7 @@ namespace PicoKVM_Client
             _kvmUrl = txtKvmUrl.Text.Trim();
             if (string.IsNullOrEmpty(_kvmUrl))
             {
+                tglConnect.IsChecked = false;
                 MessageBox.Show("请输入KVM地址", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
@@ -115,28 +114,33 @@ namespace PicoKVM_Client
             {
                 txtStatus.Text = "正在连接...";
                 txtStatus.Visibility = Visibility.Visible;
-                
-                // 确保WebView2已初始化（正常情况下在Window_Loaded已完成）
+
                 if (webView.CoreWebView2 == null)
                 {
                     await webView.EnsureCoreWebView2Async();
                 }
-                
-                // 导航到KVM页面
-                webView.CoreWebView2.Navigate(_kvmUrl);
-                
+
+                if (webView.CoreWebView2 != null)
+                {
+                    webView.CoreWebView2.Navigate(_kvmUrl);
+                }
+                else
+                {
+                    throw new InvalidOperationException("WebView2 初始化失败，无法连接。");
+                }
+
                 _isConnected = true;
                 webView.Visibility = Visibility.Visible;
-                btnConnect.IsEnabled = false;
-                btnDisconnect.IsEnabled = true;
                 txtKvmUrl.IsEnabled = false;
+                txtConnectLabel.Text = "已连接";
                 txtStatus.Visibility = Visibility.Collapsed;
-                txtStatusBar.Text = $"已连接到 {_kvmUrl} - 窗口激活时自动捕获输入";
+                txtStatusBar.Text = "已连接";
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"连接失败: {ex.Message}\n\n请确保已安装WebView2运行时", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 txtStatus.Text = "连接失败";
+                tglConnect.IsChecked = false;
                 DisconnectFromKvm();
             }
         }
@@ -154,9 +158,10 @@ namespace PicoKVM_Client
             UninstallKeyboardHook();
             _winKeyDown = false;
             _altKeyDown = false;
-            btnConnect.IsEnabled = true;
-            btnDisconnect.IsEnabled = false;
             txtKvmUrl.IsEnabled = true;
+            txtConnectLabel.Text = "连接";
+            if (tglConnect.IsChecked == true)
+                tglConnect.IsChecked = false;
             txtStatus.Text = "未连接";
             txtStatus.Visibility = Visibility.Visible;
             txtStatusBar.Text = "已断开连接";
@@ -185,7 +190,6 @@ namespace PicoKVM_Client
             WindowState = WindowState.Maximized;
 
             videoBorder.Margin = new Thickness(0);
-            statusBar.Visibility = Visibility.Collapsed;
             toolBarPlaceholder.Visibility = Visibility.Collapsed;
 
             _isFullscreen = true;
@@ -197,8 +201,7 @@ namespace PicoKVM_Client
             ResizeMode = _previousResizeMode;
             WindowState = _previousWindowState;
 
-            videoBorder.Margin = new Thickness(5);
-            statusBar.Visibility = Visibility.Visible;
+            videoBorder.Margin = new Thickness(0);
             toolBarPlaceholder.Visibility = Visibility.Visible;
 
             _isFullscreen = false;
@@ -341,7 +344,7 @@ namespace PicoKVM_Client
                 _isInputCaptured = true;
                 InstallKeyboardHook();
                 webView.Focus();
-                txtStatusBar.Text = $"✓ 输入已捕获 - 已连接到 {_kvmUrl}";
+                txtStatusBar.Text = "✓ 输入已捕获";
             }
         }
 
@@ -353,7 +356,7 @@ namespace PicoKVM_Client
                 UninstallKeyboardHook();
                 _winKeyDown = false;
                 _altKeyDown = false;
-                txtStatusBar.Text = $"已连接到 {_kvmUrl}";
+                txtStatusBar.Text = "已连接";
             }
         }
 
