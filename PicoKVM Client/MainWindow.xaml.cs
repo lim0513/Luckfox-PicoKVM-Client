@@ -78,7 +78,7 @@ public partial class MainWindow : Window
         response.EnsureSuccessStatusCode();
         var html = await response.Content.ReadAsStringAsync();
 
-        string[] keywords = ["pikvm", "picoKVM", "PicoKVM", "luckfox", "LuckFox", "kvmd", "kvm-video"];
+        string[] keywords = ["logo-luckfox.png"];
         return keywords.Any(k => html.Contains(k, StringComparison.OrdinalIgnoreCase));
     }
 
