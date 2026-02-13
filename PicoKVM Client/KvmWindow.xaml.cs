@@ -210,6 +210,9 @@ public partial class KvmWindow : Window
         Height = (mi.rcMonitor.Bottom - mi.rcMonitor.Top) * dpiY;
 
         titleBar.Visibility = Visibility.Collapsed;
+        rootBorder.Margin = new Thickness(0);
+        rootBorder.CornerRadius = new CornerRadius(0);
+        ResizeMode = ResizeMode.NoResize;
         iconFullscreen.Kind = MaterialDesignThemes.Wpf.PackIconKind.WindowRestore;
         _isFullscreen = true;
     }
@@ -223,6 +226,9 @@ public partial class KvmWindow : Window
         WindowState = _previousWindowState;
 
         titleBar.Visibility = Visibility.Visible;
+        rootBorder.Margin = new Thickness(4);
+        rootBorder.CornerRadius = new CornerRadius(8);
+        ResizeMode = ResizeMode.CanResizeWithGrip;
         iconFullscreen.Kind = MaterialDesignThemes.Wpf.PackIconKind.WindowMaximize;
         _isFullscreen = false;
     }
