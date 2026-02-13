@@ -6,6 +6,7 @@ namespace PicoKVM_Client;
 public class AppSettings
 {
     public string KvmUrl { get; set; } = "http://10.126.126.5";
+    public string Password { get; set; } = "";
 
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

@@ -5,69 +5,62 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:PicoKVM_Client"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-    xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
     mc:Ignorable="d"
-    Title="PicoKVM Client" Height="600" Width="1024"
-    KeyDown="Window_KeyDown"
-    Activated="Window_Activated"
-    Deactivated="Window_Deactivated"
-    Loaded="Window_Loaded"
+    Title="PicoKVM Client" SizeToContent="WidthAndHeight" ResizeMode="NoResize"
+    WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen"
     Closed="Window_Closed"
     Background="{DynamicResource MaterialDesign.Brush.Background}"
     FontFamily="Microsoft YaHei"
     TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
     TextElement.FontSize="12">
 
-<Grid>
-    <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-    </Grid.RowDefinitions>
+<WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="36" GlassFrameThickness="0" ResizeBorderThickness="0" CornerRadius="12"/>
+</WindowChrome.WindowChrome>
 
-    <!-- 工具栏 -->
-    <materialDesign:ColorZone x:Name="toolBarPlaceholder" Grid.Row="0" Mode="PrimaryDark" Padding="5"
-                              materialDesign:ElevationAssist.Elevation="Dp2">
-        <DockPanel>
-            <!-- 右侧状态信息 -->
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,4,0">
-                <materialDesign:PackIcon Kind="Information" VerticalAlignment="Center" Margin="0,0,6,0" Width="14" Height="14" Opacity="0.7"/>
-                <TextBlock x:Name="txtStatusBar" Text="就绪" VerticalAlignment="Center" Opacity="0.7"/>
-            </StackPanel>
-            <!-- 左侧控件 -->
-            <StackPanel Orientation="Horizontal">
-                <materialDesign:PackIcon Kind="Web" VerticalAlignment="Center" Margin="0,0,8,0" Width="20" Height="20"/>
-                <TextBox x:Name="txtKvmUrl" Width="280" VerticalAlignment="Center"
+<Border CornerRadius="12" BorderBrush="{DynamicResource MaterialDesign.Brush.Primary}" BorderThickness="1">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题栏 -->
+        <materialDesign:ColorZone Grid.Row="0" Mode="PrimaryDark" Padding="12,8"
+                                  materialDesign:ElevationAssist.Elevation="Dp2">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Click="BtnClose_Click"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Padding="8,4" Height="28" Width="36" Foreground="White"
+                        WindowChrome.IsHitTestVisibleInChrome="True">
+                    <materialDesign:PackIcon Kind="WindowClose" Width="14" Height="14"/>
+                </Button>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="Monitor" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Luckfox PicoKVM Client" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
+        </materialDesign:ColorZone>
+
+        <!-- 连接面板 -->
+        <materialDesign:ColorZone Grid.Row="1" Mode="PrimaryMid" Padding="16,12">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="Web" VerticalAlignment="Center" Margin="0,0,8,0" Width="18" Height="18"/>
+                <TextBox x:Name="txtKvmUrl" Width="260" VerticalAlignment="Center"
                          materialDesign:HintAssist.Hint="KVM 地址"
                          materialDesign:TextFieldAssist.HasClearButton="True"
                          Style="{StaticResource MaterialDesignTextBox}"
-                         materialDesign:HintAssist.FloatingScale="0.8"
-                         Margin="0,0,10,0"/>
-                <ToggleButton x:Name="tglConnect"
-                              Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                              ToolTip="连接/断开"
-                              Checked="TglConnect_Changed" Unchecked="TglConnect_Changed"/>
-                <TextBlock x:Name="txtConnectLabel" Text="连接" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                <ToggleButton x:Name="chkFullscreen" Margin="16,0,0,0"
-                              Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                              ToolTip="全屏 (F12)"
-                              Checked="ChkFullscreen_Changed" Unchecked="ChkFullscreen_Changed"/>
-                <TextBlock Text="全屏 (F12)" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                         Margin="0,0,10,0"
+                         WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <PasswordBox x:Name="pwdPassword" Width="120" VerticalAlignment="Center"
+                             materialDesign:HintAssist.Hint="密码"
+                             Margin="0,0,12,0"
+                             WindowChrome.IsHitTestVisibleInChrome="True"/>
+                <Button x:Name="btnConnect" Content="连接" Click="BtnConnect_Click"
+                        Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                        Padding="16,4" WindowChrome.IsHitTestVisibleInChrome="True"/>
             </StackPanel>
-        </DockPanel>
-    </materialDesign:ColorZone>
-
-    <!-- WebView2 显示区域 -->
-    <Border x:Name="videoBorder" Grid.Row="1" Background="Black" CornerRadius="4">
-        <Grid>
-            <wv2:WebView2 x:Name="webView" 
-                          Visibility="Collapsed"
-                          DefaultBackgroundColor="Black"/>
-            <Canvas x:Name="canvasOverlay">
-                <TextBlock x:Name="txtStatus" Text="未连接" Foreground="White" 
-                           Canvas.Left="20" Canvas.Top="20"
-                           FontSize="20" FontWeight="Bold"/>
-            </Canvas>
-        </Grid>
-    </Border>
-</Grid>
+        </materialDesign:ColorZone>
+    </Grid>
+</Border>
 </Window>
