@@ -64,6 +64,7 @@ public partial class MainWindow : Window
         finally
         {
             btnConnect.IsEnabled = true;
+            btnConnect.Content = "连接";
         }
     }
 
