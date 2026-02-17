@@ -4,6 +4,7 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
     Title="PicoKVM" Height="600" Width="1024" MinHeight="300" MinWidth="400"
+    Icon="app.ico"
     WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResizeWithGrip"
     KeyDown="Window_KeyDown"
     Activated="Window_Activated"

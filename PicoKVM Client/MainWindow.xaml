@@ -7,6 +7,7 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     mc:Ignorable="d"
     Title="PicoKVM Client" SizeToContent="WidthAndHeight" ResizeMode="NoResize"
+    Icon="app.ico"
     WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen"
     Closed="Window_Closed"
     Background="{DynamicResource MaterialDesign.Brush.Background}"
