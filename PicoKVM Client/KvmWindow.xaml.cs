@@ -111,6 +111,9 @@ public partial class KvmWindow : Window
 
         string js = """
             (function tryInject(retries) {
+                // 检查页面是否被隐藏（窗口关闭时会触发）
+                if (document.hidden || !document.body) return;
+                
                 var video = document.querySelector('video');
                 if (video && video.readyState >= 2 && video.videoWidth > 0) {
                     document.body.innerHTML = '';
@@ -128,7 +131,7 @@ public partial class KvmWindow : Window
                 if (retries > 0) {
                     setTimeout(function(){ tryInject(retries - 1); }, 500);
                 }
-            })(30);
+            })(120);
             """;
 
         try
@@ -294,14 +297,30 @@ public partial class KvmWindow : Window
             int vkCode = Marshal.ReadInt32(lParam);
             bool isKeyDown = wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN;
 
+            // F12 交给 WPF 窗口处理（全屏切换）
+            if (vkCode == 0x7B) // F12
+            {
+                return CallNextHookEx(_hookID, nCode, wParam, lParam);
+            }
+
             bool isWinKey = vkCode is 0x5B or 0x5C;
             bool isAltKey = vkCode is 0x12 or 0xA4 or 0xA5;
+            bool isCtrlKey = vkCode is 0x11 or 0xA2 or 0xA3;
+            bool isShiftKey = vkCode is 0x10 or 0xA0 or 0xA1;
 
+            // 更新修饰键状态
             if (isWinKey) _winKeyDown = isKeyDown;
             if (isAltKey) _altKeyDown = isKeyDown;
 
+            // 修饰键本身不拦截，让 WebView2 正常接收（保证组合键正常工作）
+            if (isCtrlKey || isShiftKey || isAltKey)
+            {
+                return CallNextHookEx(_hookID, nCode, wParam, lParam);
+            }
+
+            // 只拦截 Win 键相关的组合键
             bool shouldIntercept = isWinKey || _winKeyDown
-                || (_altKeyDown && vkCode is 0x09 or 0x1B or 0x73);
+                || (_altKeyDown && vkCode is 0x09 or 0x1B or 0x73); // Alt+Tab, Alt+Esc, Alt+F4
 
             if (shouldIntercept)
             {
@@ -310,6 +329,7 @@ public partial class KvmWindow : Window
                 return (IntPtr)1;
             }
 
+            // 其他按键放行，让 WebView2 正常处理
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
         return CallNextHookEx(_hookID, nCode, wParam, lParam);
